@@ -1,0 +1,544 @@
+openapi: 3.0.3
+info:
+  description: REST API для ведения каталога рыб океанариума.
+  title: AquaManager API
+  version: 1.0.0
+servers:
+- description: Локальный сервер разработки
+  url: http://localhost:8080/api
+tags:
+- description: Операции с каталогом рыб
+  name: Fish
+paths:
+  /fish:
+    get:
+      description: Возвращает каталог рыб с возможностью фильтрации по виду и аквариуму.
+      operationId: list_fish
+      parameters:
+      - description: Фильтр по биологическому виду
+        example: Amphiprion ocellaris
+        explode: true
+        in: query
+        name: species
+        required: false
+        schema:
+          maxLength: 100
+          minLength: 1
+          type: string
+        style: form
+      - description: Фильтр по идентификатору аквариума
+        example: 3
+        explode: true
+        in: query
+        name: aquariumId
+        required: false
+        schema:
+          format: int64
+          minimum: 1
+          type: integer
+        style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FishListResponse"
+          description: Список рыб успешно получен
+        "401":
+          content:
+            application/json:
+              example:
+                code: UNAUTHORIZED
+                message: Требуется авторизация.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Токен отсутствует или недействителен
+      security:
+      - BearerAuth: []
+      summary: Получить список рыб
+      tags:
+      - Fish
+      x-openapi-router-controller: openapi_server.controllers.fish_controller
+    post:
+      description: Создаёт запись об обитателе океанариума.
+      operationId: create_fish
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFishRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FishResponse"
+          description: Рыба успешно добавлена
+        "400":
+          content:
+            application/json:
+              example:
+                code: VALIDATION_ERROR
+                message: Поле sizeCm должно быть больше нуля.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: "Данные не прошли проверку, например размер не положительны\
+            й"
+        "401":
+          content:
+            application/json:
+              example:
+                code: UNAUTHORIZED
+                message: Требуется авторизация.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Токен отсутствует или недействителен
+        "403":
+          content:
+            application/json:
+              example:
+                code: FORBIDDEN
+                message: Недостаточно прав для выполнения операции.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: "Пользователь авторизован, но не имеет права удалять записи"
+        "404":
+          content:
+            application/json:
+              example:
+                code: FISH_NOT_FOUND
+                message: Рыба с указанным идентификатором не найдена.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Аквариум с указанным aquariumId не найден
+      security:
+      - BearerAuth: []
+      summary: Добавить рыбу в каталог
+      tags:
+      - Fish
+      x-openapi-router-controller: openapi_server.controllers.fish_controller
+  /fish/{fishId}:
+    delete:
+      description: Удаляет запись о рыбе по её идентификатору.
+      operationId: delete_fish
+      parameters:
+      - description: Уникальный идентификатор рыбы
+        explode: false
+        in: path
+        name: fishId
+        required: true
+        schema:
+          format: int64
+          minimum: 1
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+          description: Запись успешно удалена
+        "401":
+          content:
+            application/json:
+              example:
+                code: UNAUTHORIZED
+                message: Требуется авторизация.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Токен отсутствует или недействителен
+        "403":
+          content:
+            application/json:
+              example:
+                code: FORBIDDEN
+                message: Недостаточно прав для выполнения операции.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: "Пользователь авторизован, но не имеет права удалять записи"
+        "404":
+          content:
+            application/json:
+              example:
+                code: FISH_NOT_FOUND
+                message: Рыба с указанным идентификатором не найдена.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Аквариум с указанным aquariumId не найден
+      security:
+      - BearerAuth: []
+      summary: Удалить рыбу из каталога
+      tags:
+      - Fish
+      x-openapi-router-controller: openapi_server.controllers.fish_controller
+    get:
+      description: Возвращает публичные данные записи по её идентификатору.
+      operationId: get_fish_by_id
+      parameters:
+      - description: Уникальный идентификатор рыбы
+        explode: false
+        in: path
+        name: fishId
+        required: true
+        schema:
+          format: int64
+          minimum: 1
+          type: integer
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FishResponse"
+          description: Информация о рыбе успешно получена
+        "401":
+          content:
+            application/json:
+              example:
+                code: UNAUTHORIZED
+                message: Требуется авторизация.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Токен отсутствует или недействителен
+        "404":
+          content:
+            application/json:
+              example:
+                code: FISH_NOT_FOUND
+                message: Рыба с указанным идентификатором не найдена.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Аквариум с указанным aquariumId не найден
+      security:
+      - BearerAuth: []
+      summary: Получить информацию о конкретной рыбе
+      tags:
+      - Fish
+      x-openapi-router-controller: openapi_server.controllers.fish_controller
+    patch:
+      description: Изменяет только переданные поля; неуказанные поля остаются без
+        изменений.
+      operationId: update_fish
+      parameters:
+      - description: Уникальный идентификатор рыбы
+        explode: false
+        in: path
+        name: fishId
+        required: true
+        schema:
+          format: int64
+          minimum: 1
+          type: integer
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFishRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FishResponse"
+          description: Информация о рыбе успешно обновлена
+        "400":
+          content:
+            application/json:
+              example:
+                code: VALIDATION_ERROR
+                message: Поле sizeCm должно быть больше нуля.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: "Данные не прошли проверку, например размер не положительны\
+            й"
+        "401":
+          content:
+            application/json:
+              example:
+                code: UNAUTHORIZED
+                message: Требуется авторизация.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Токен отсутствует или недействителен
+        "403":
+          content:
+            application/json:
+              example:
+                code: FORBIDDEN
+                message: Недостаточно прав для выполнения операции.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: "Пользователь авторизован, но не имеет права удалять записи"
+        "404":
+          content:
+            application/json:
+              example:
+                code: FISH_NOT_FOUND
+                message: Рыба с указанным идентификатором не найдена.
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+          description: Аквариум с указанным aquariumId не найден
+      security:
+      - BearerAuth: []
+      summary: Частично обновить информацию о рыбе
+      tags:
+      - Fish
+      x-openapi-router-controller: openapi_server.controllers.fish_controller
+components:
+  parameters:
+    FishId:
+      description: Уникальный идентификатор рыбы
+      explode: false
+      in: path
+      name: fishId
+      required: true
+      schema:
+        format: int64
+        minimum: 1
+        type: integer
+      style: simple
+  schemas:
+    FishResponse:
+      description: Публичное DTO записи о рыбе; внутренние служебные поля не раскрываются.
+      example:
+        id: 1
+        name: Немо
+        species: Amphiprion ocellaris
+        sizeCm: 8.5
+        aquariumId: 3
+        arrivalDate: 2025-04-12
+        description: "Рыба-клоун, обитает среди актиний."
+      properties:
+        id:
+          example: 1
+          format: int64
+          readOnly: true
+          title: id
+          type: integer
+        name:
+          example: Немо
+          maxLength: 100
+          minLength: 1
+          title: name
+          type: string
+        species:
+          example: Amphiprion ocellaris
+          maxLength: 100
+          minLength: 1
+          title: species
+          type: string
+        sizeCm:
+          example: 8.5
+          format: float
+          minimum: 0.1
+          title: sizeCm
+          type: number
+        aquariumId:
+          example: 3
+          format: int64
+          minimum: 1
+          title: aquariumId
+          type: integer
+        arrivalDate:
+          example: 2025-04-12
+          format: date
+          title: arrivalDate
+          type: string
+        description:
+          example: "Рыба-клоун, обитает среди актиний."
+          maxLength: 1000
+          nullable: true
+          title: description
+          type: string
+      required:
+      - aquariumId
+      - arrivalDate
+      - id
+      - name
+      - sizeCm
+      - species
+      title: FishResponse
+      type: object
+    FishListResponse:
+      example:
+        total: 0
+        items:
+        - id: 1
+          name: Немо
+          species: Amphiprion ocellaris
+          sizeCm: 8.5
+          aquariumId: 3
+          arrivalDate: 2025-04-12
+          description: "Рыба-клоун, обитает среди актиний."
+        - id: 1
+          name: Немо
+          species: Amphiprion ocellaris
+          sizeCm: 8.5
+          aquariumId: 3
+          arrivalDate: 2025-04-12
+          description: "Рыба-клоун, обитает среди актиний."
+      properties:
+        total:
+          description: Количество найденных записей
+          minimum: 0
+          title: total
+          type: integer
+        items:
+          items:
+            $ref: "#/components/schemas/FishResponse"
+          title: items
+          type: array
+      required:
+      - items
+      - total
+      title: FishListResponse
+      type: object
+    CreateFishRequest:
+      example:
+        name: name
+        species: species
+        sizeCm: 0.18008281
+        aquariumId: 1
+        arrivalDate: 2000-01-23
+        description: description
+      properties:
+        name:
+          maxLength: 100
+          minLength: 1
+          title: name
+          type: string
+        species:
+          maxLength: 100
+          minLength: 1
+          title: species
+          type: string
+        sizeCm:
+          format: float
+          minimum: 0.1
+          title: sizeCm
+          type: number
+        aquariumId:
+          format: int64
+          minimum: 1
+          title: aquariumId
+          type: integer
+        arrivalDate:
+          format: date
+          title: arrivalDate
+          type: string
+        description:
+          maxLength: 1000
+          nullable: true
+          title: description
+          type: string
+      required:
+      - aquariumId
+      - arrivalDate
+      - name
+      - sizeCm
+      - species
+      title: CreateFishRequest
+      type: object
+    UpdateFishRequest:
+      example:
+        name: name
+        species: species
+        sizeCm: 0.18008281
+        aquariumId: 1
+        arrivalDate: 2000-01-23
+        description: description
+      minProperties: 1
+      properties:
+        name:
+          maxLength: 100
+          minLength: 1
+          title: name
+          type: string
+        species:
+          maxLength: 100
+          minLength: 1
+          title: species
+          type: string
+        sizeCm:
+          format: float
+          minimum: 0.1
+          title: sizeCm
+          type: number
+        aquariumId:
+          format: int64
+          minimum: 1
+          title: aquariumId
+          type: integer
+        arrivalDate:
+          format: date
+          title: arrivalDate
+          type: string
+        description:
+          maxLength: 1000
+          nullable: true
+          title: description
+          type: string
+      title: UpdateFishRequest
+      type: object
+    ErrorResponse:
+      example:
+        code: FISH_NOT_FOUND
+        message: Рыба с указанным идентификатором не найдена.
+      properties:
+        code:
+          example: FISH_NOT_FOUND
+          title: code
+          type: string
+        message:
+          example: Рыба с указанным идентификатором не найдена.
+          title: message
+          type: string
+      required:
+      - code
+      - message
+      title: ErrorResponse
+      type: object
+    MessageResponse:
+      example:
+        message: Запись о рыбе успешно удалена.
+      properties:
+        message:
+          example: Запись о рыбе успешно удалена.
+          title: message
+          type: string
+      required:
+      - message
+      title: MessageResponse
+      type: object
+    ProblemDetailsResponse:
+      properties:
+        detail:
+          example: No authorization token provided
+          type: string
+        status:
+          example: 401
+          type: integer
+        title:
+          example: Unauthorized
+          type: string
+        type:
+          example: about:blank
+          type: string
+      required:
+      - detail
+      - status
+      - title
+      - type
+      type: object
+  securitySchemes:
+    BearerAuth:
+      bearerFormat: JWT
+      description: Токен доступа сотрудника океанариума.
+      scheme: bearer
+      type: http
+      x-bearerInfoFunc: openapi_server.controllers.security_controller.info_from_BearerAuth
